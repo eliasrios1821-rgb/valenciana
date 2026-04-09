@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Valenciana Eventos - Login</title>
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --pool-blue: 185 70% 45%;
+      --pool-light: 185 60% 95%;
+      --sand-beige: 35 30% 85%;
+      --coral: 15 80% 65%;
+      --glass-bg: rgba(255, 255, 255, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.5);
+      --shadow-elegant: 0 10px 30px -10px hsla(185, 70%, 45%, 0.2);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Geist Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Fondo */
+    .bg-image {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('https://images.unsplash.com/photo-1716801408923-c2149294dad2?w=1920&q=80') center/cover;
+      transition: transform 1s ease;
+    }
+
+    .bg-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, hsla(185, 70%, 45%, 0.4) 0%, transparent 50%, hsla(35, 30%, 85%, 0.3) 100%);
+      backdrop-filter: blur(2px);
+    }
+
+    .login-card {
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      box-shadow: var(--shadow-elegant);
+      padding: 48px 40px;
+      animation: fadeInScale 0.6s cubic-bezier(0.2, 0, 0.2, 1) both;
+    }
+
+    @keyframes fadeInScale {
+      from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    /* barra con gradiente */
+    .login-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, hsla(185, 70%, 45%, 1), hsla(15, 80%, 65%, 1), hsla(35, 30%, 85%, 1));
+      border-radius: 16px 16px 0 0;
+    }
+
+    /* Logo */
+    .logo {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .logo-icon {
+      width: 64px;
+      height: 64px;
+      background: hsla(185, 70%, 45%, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .logo-icon svg {
+      color: hsla(185, 70%, 45%, 1);
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    /* Tipografia */
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      font-weight: 600;
+      text-align: center;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #64748b;
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+
+    /* Form */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.5);
+      color: #1a1a2e;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    input::placeholder {
+      color: #94a3b8;
+    }
+
+    input:focus {
+      border-color: hsla(185, 70%, 45%, 0.5);
+      box-shadow: 0 0 0 3px hsla(185, 70%, 45%, 0.1);
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Button */
+    .btn {
+      width: 100%;
+      padding: 14px 24px;
+      font-size: 16px;
+      font-weight: 500;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .btn-primary {
+      background: hsla(185, 70%, 45%, 1);
+      color: white;
+      box-shadow: 0 4px 12px hsla(185, 70%, 45%, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: hsla(185, 70%, 40%, 1);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px hsla(185, 70%, 45%, 0.4);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    /* --- NUEVO: Estilos del botón de Google --- */
+    .btn-google {
+      background: #ffffff;
+      color: #374151;
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      font-weight: 500;
+    }
+
+    .btn-google:hover {
+      background: #f8fafc;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .btn-google:active {
+      transform: scale(0.98);
+    }
+
+    .btn-google img {
+      width: 20px;
+      height: 20px;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 20px 0;
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid rgba(100, 116, 139, 0.3);
+    }
+
+    .divider:not(:empty)::before {
+      margin-right: 15px;
+    }
+
+    .divider:not(:empty)::after {
+      margin-left: 15px;
+    }
+    /* -------------------------------------- */
+
+    /* Spinner */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Toggle */
+    .toggle-text {
+      text-align: center;
+      font-size: 14px;
+      color: #64748b;
+      margin-top: 24px;
+    }
+
+    .toggle-link {
+      color: hsla(185, 70%, 45%, 1);
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .toggle-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Admin hint */
+    .admin-hint {
+      text-align: center;
+      font-size: 10px;
+      color: #94a3b8;
+      font-style: italic;
+      margin-top: 16px;
+    }
+
+
+    .toast {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      padding: 14px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      transform: translateX(120%);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      transform: translateX(0);
+    }
+
+    .toast-error {
+      background: #fee2e2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+    }
+
+    .toast-success {
+      background: #dcfce7;
+      color: #16a34a;
+      border: 1px solid #bbf7d0;
+    }
+
+    /* Admin Dashboard */
+    .admin-panel {
+      display: none;
+      width: 100%;
+      max-width: 900px;
+      animation: fadeInScale 0.6s cubic-bezier(0.2, 0, 0.2, 1) both;
+    }
+
+    .admin-panel.active {
+      display: block;
+    }
+
+    .login-container.hidden {
+      display: none;
+    }
+
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .admin-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 32px;
+      font-weight: 700;
+      color: white;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .admin-date {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 14px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: hsla(185, 70%, 45%, 1);
+    }
+
+    .stat-sub {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    .events-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .events-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 600;
+      color: #1a1a2e;
+      margin-bottom: 20px;
+    }
+
+    .event-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      border-radius: 8px;
+      transition: background 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .event-item:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .event-info h4 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+
+    .event-info p {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .event-status {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .status-confirmed {
+      background: hsla(185, 70%, 45%, 0.15);
+      color: hsla(185, 70%, 45%, 1);
+    }
+
+    .status-pending {
+      background: hsla(35, 30%, 85%, 0.8);
+      color: #78716c;
+    }
+
+    .btn-logout {
+      background: rgba(255, 255, 255, 0.2);
+      color: #dc2626;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-logout:hover {
+      background: rgba(220, 38, 38, 0.1);
+      border-color: rgba(220, 38, 38, 0.3);
+    }
+
+    /* Footer */
+    .footer {
+      position: fixed;
+      bottom: 24px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .footer p {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* En celu */
+    @media (max-width: 640px) {
+      .login-card {
+        margin: 20px;
+        padding: 36px 24px;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .admin-header {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+      }
+    }
+  </style>
+  </head>
+<body>
+  <div class="bg-image"></div>
+  <div class="bg-overlay"></div>
+
+  <div class="login-container" id="loginContainer">
+    <div class="login-card">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12c0-3.5 3.5-6 8-6s8 2.5 8 6-3.5 6-8 6-8-2.5-8-6Z"/>
+            <path d="M12 12c0 3.5 3.5 6 8 6"/>
+            <path d="M2 17c0-3.5 3.5-6 8-6s8 2.5 8 6"/>
+            <path d="M2 7c0 3.5 3.5 6 8 6"/>
+          </svg>
+        </div>
+      </div>
+      
+      <h1 id="formTitle">¡Bienvenido de Nuevo!</h1>
+      <p class="subtitle" id="formSubtitle">Ingresa a Valenciana para gestionar tu evento.</p>
+
+      <form id="authForm">
+        <div class="form-group" id="nameGroup" style="display: none;">
+          <label for="nombre">Nombre Completo</label>
+          <input type="text" id="nombre" placeholder="Ej. Elias Rios">
+        </div>
+        
+        <div class="form-group" id="phoneGroup" style="display: none;">
+          <label for="telefono">Teléfono</label>
+          <input type="tel" id="telefono" placeholder="Ej. 8993284044">
+        </div>
+
+        <div class="form-group">
+          <label for="email">Correo Electrónico</label>
+          <input type="email" id="email" placeholder="ejemplo@valenciana.com" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+          <svg id="btnIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+            <polyline points="10 17 15 12 10 7"/>
+            <line x1="15" x2="3" y1="12" y2="12"/>
+          </svg>
+          <span id="btnText">Iniciar Sesión</span>
+        </button>
+      </form>
+
+      <div class="divider">o continuar con</div>
+      
+      <button type="button" class="btn btn-google" id="googleLoginBtn">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google logo">
+        <span id="googleBtnText">Ingresar con Google</span>
+      </button>
+      <p class="toggle-text">
+        <span id="toggleQuestion">¿No tienes una cuenta?</span>
+        <a class="toggle-link" id="toggleLink">Regístrate aquí</a>
+      </p>
+
+      <p class="admin-hint" id="adminHint">Admin: admin@valenciana.com / admin123</p>
+    </div>
+  </div>
+
+  <div class="admin-panel" id="adminPanel">
+    <div class="admin-header">
+      <h1 class="admin-title">Panel de Control</h1>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <span class="admin-date" id="currentDate"></span>
+        <button class="btn-logout" id="logoutBtn">Salir</button>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Eventos Hoy</div>
+        <div class="stat-value">4</div>
+        <div class="stat-sub">2 confirmados</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Nuevas Solicitudes</div>
+        <div class="stat-value">12</div>
+        <div class="stat-sub">+3 desde ayer</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Ingresos Mensuales</div>
+        <div class="stat-value">$12.4k</div>
+        <div class="stat-sub">15% de crecimiento</div>
+      </div>
+    </div>
+
+    <div class="events-card">
+      <h2 class="events-title">Próximos Eventos</h2>
+      <div class="event-item">
+        <div class="event-info">
+          <h4>Boda García-López</h4>
+          <p>Boda • Mañana</p>
+        </div>
+        <span class="event-status status-confirmed">Confirmado</span>
+      </div>
+      <div class="event-item">
+        <div class="event-info">
+          <h4>XV Años Sofía</h4>
+          <p>XV Años • Sáb 7 Mar</p>
+        </div>
+        <span class="event-status status-pending">Pendiente</span>
+      </div>
+      <div class="event-item">
+        <div class="event-info">
+          <h4>Corporativo Tech</h4>
+          <p>Cena • Lun 9 Mar</p>
+        </div>
+        <span class="event-status status-confirmed">Confirmado</span>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="toast" id="toast"></div>
+
+  
+  <div class="footer">
+    <p>Salón de Eventos Valenciana © 2026</p>
+  </div>
+
+  <script>
+    // --- 1. CONFIGURACIÓN DE FIREBASE (¡Siempre hasta arriba!) ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyDg9mKZEXWwAJux4DO702d0sElCD2dtepU",
+        authDomain: "barberia-garcia-app.firebaseapp.com",
+        projectId: "barberia-garcia-app",
+        storageBucket: "barberia-garcia-app.firebasestorage.app",
+        messagingSenderId: "1093328999137",
+        appId: "1:1093328999137:web:f229925554a2a7f0739da0"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // --- 2. ESTADOS Y ELEMENTOS DEL DOM ---
+    let isLogin = true;
+    let isLoading = false;
+    let isAdmin = false;
+    
+    // ¡LA SOLUCIÓN MAGICA! Esta bandera le dirá a la página si debe esperar
+    let accionManualActiva = false; 
+
+    const form = document.getElementById('authForm');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const btnIcon = document.getElementById('btnIcon');
+    const formTitle = document.getElementById('formTitle');
+    const formSubtitle = document.getElementById('formSubtitle');
+    const toggleLink = document.getElementById('toggleLink');
+    const toggleQuestion = document.getElementById('toggleQuestion');
+    const adminHint = document.getElementById('adminHint');
+    const loginContainer = document.getElementById('loginContainer');
+    const adminPanel = document.getElementById('adminPanel');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const toast = document.getElementById('toast');
+    
+    const googleLoginBtn = document.getElementById('googleLoginBtn');
+    const googleBtnText = document.getElementById('googleBtnText');
+
+    const nombreInput = document.getElementById('nombre');
+    const telefonoInput = document.getElementById('telefono');
+    const nameGroup = document.getElementById('nameGroup');
+    const phoneGroup = document.getElementById('phoneGroup');
+
+    // Toggle entre login y register
+    toggleLink.addEventListener('click', () => {
+      isLogin = !isLogin;
+      
+      const currentIcon = document.getElementById('btnIcon'); 
+
+      if (isLogin) {
+        formTitle.textContent = '¡Bienvenido de Nuevo!';
+        formSubtitle.textContent = 'Ingresa a Valenciana para gestionar tu evento.';
+        btnText.textContent = 'Iniciar Sesión';
+        googleBtnText.textContent = 'Ingresar con Google';
+        toggleQuestion.textContent = '¿No tienes una cuenta?';
+        toggleLink.textContent = 'Regístrate aquí';
+        adminHint.style.display = 'block';
+        if (currentIcon) currentIcon.outerHTML = `<svg id="btnIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>`;
+        
+        nameGroup.style.display = 'none';
+        phoneGroup.style.display = 'none';
+        nombreInput.required = false;
+        telefonoInput.required = false;
+      } else {
+        formTitle.textContent = 'Crea tu Cuenta';
+        formSubtitle.textContent = 'Únete a nosotros para organizar el evento de tus sueños.';
+        btnText.textContent = 'Registrarse';
+        googleBtnText.textContent = 'Registrarse con Google';
+        toggleQuestion.textContent = '¿Ya tienes una cuenta?';
+        toggleLink.textContent = 'Inicia sesión';
+        adminHint.style.display = 'none';
+        if (currentIcon) currentIcon.outerHTML = `<svg id="btnIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>`;
+        
+        nameGroup.style.display = 'block';
+        phoneGroup.style.display = 'block';
+        nombreInput.required = true;
+        telefonoInput.required = true;
+      }
+    });
+
+    const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('es-ES', dateOptions);
+
+    function showToast(message, type = 'error') {
+      toast.textContent = message;
+      toast.className = `toast toast-${type}`;
+      toast.classList.add('show');
+      setTimeout(() => { toast.classList.remove('show'); }, 3000);
+    }
+
+    // --- 4. INTEGRACIÓN FIREBASE: LOGIN CON GOOGLE ---
+    googleLoginBtn.addEventListener('click', async () => {
+        accionManualActiva = true; // Activamos la bandera para frenar la auto-redirección
+        const provider = new firebase.auth.GoogleAuthProvider();
+        
+        try {
+            const result = await auth.signInWithPopup(provider);
+            const user = result.user;
+            if (!user) return;
+
+            if (user.email === 'admin@valenciana.com') {
+                await db.collection("usuarios").doc(user.uid).set({
+                    nombre: 'Administrador',
+                    email: user.email,
+                    rol: 'admin'
+                }, { merge: true });
+
+                showToast('¡Bienvenido, Administrador!', 'success');
+                setTimeout(() => { window.location.href = 'index-admin.html'; }, 1000);
+
+            } else {
+                const userRef = db.collection("usuarios").doc(user.uid);
+                const doc = await userRef.get();
+
+                if (!doc.exists) {
+                    await userRef.set({
+                        nombre: user.displayName || 'Usuario de Google',
+                        telefono: user.phoneNumber || 'No especificado',
+                        email: user.email,
+                        rol: 'cliente',
+                        fechaRegistro: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    showToast('¡Cuenta de Google registrada con éxito!', 'success');
+                } else {
+                    const userData = doc.data();
+                    showToast(`¡Bienvenido de vuelta, ${userData.nombre}!`, 'success');
+                }
+                setTimeout(() => { window.location.href = 'index.html'; }, 1000); 
+            }
+        } catch (error) {
+            console.error('Error con Google:', error);
+            showToast('Error: ' + error.message);
+        }
+    });
+
+    // --- 5. INTEGRACIÓN FIREBASE: CORREO Y CONTRASEÑA ---
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      accionManualActiva = true; // Activamos la bandera
+      
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+      const nombre = nombreInput.value.trim();
+      const telefono = telefonoInput.value.trim();
+
+      if (!isLogin && (!nombre || !telefono)) {
+        showToast('Por favor, completa tu nombre y teléfono.');
+        return;
+      }
+
+      if (!email || !password) {
+        showToast('Por favor, completa correo y contraseña.');
+        return;
+      }
+
+      isLoading = true;
+      submitBtn.disabled = true;
+      btnText.textContent = 'Procesando...';
+      
+      const currentIconForSpinner = document.getElementById('btnIcon');
+      if (currentIconForSpinner) {
+          currentIconForSpinner.outerHTML = '<div class="spinner" id="btnIcon"></div>';
+      }
+
+      try {
+          if (isLogin) {
+              const userCredential = await auth.signInWithEmailAndPassword(email, password);
+              const user = userCredential.user;
+              
+              if (email === 'admin@valenciana.com') {
+                  await db.collection("usuarios").doc(user.uid).set({
+                      nombre: 'Administrador',
+                      email: user.email,
+                      rol: 'admin'
+                  }, { merge: true });
+
+                  showToast('¡Bienvenido, Administrador!', 'success');
+                  setTimeout(() => { window.location.href = 'index-admin.html'; }, 1000);
+              } else {
+                  const userDoc = await db.collection("usuarios").doc(user.uid).get();
+                  if (userDoc.exists) {
+                      showToast(`¡Bienvenido, ${userDoc.data().nombre}!`, 'success');
+                  } else {
+                      showToast('¡Inicio de sesión exitoso!', 'success');
+                  }
+                  setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+              }
+          } else {
+              // --- REGISTRAR NUEVO USUARIO ---
+              const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+              const user = userCredential.user;
+
+              await db.collection("usuarios").doc(user.uid).set({
+                  nombre: nombre,
+                  telefono: telefono,
+                  email: email,
+                  password: password, // <-- ¡AQUÍ GUARDAMOS LA CONTRASEÑA POR CAPRICHO!
+                  rol: 'cliente',
+                  fechaRegistro: firebase.firestore.FieldValue.serverTimestamp()
+              });
+
+              showToast('Cuenta creada con éxito. Redirigiendo...', 'success');
+              setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+          }
+      } catch (error) {
+          console.error("Error de autenticación: ", error);
+          if (error.code === 'auth/user-not-found') {
+              showToast('El usuario no existe. Por favor regístrate.');
+          } else if (error.code === 'auth/wrong-password') {
+              showToast('Contraseña incorrecta. Intenta de nuevo.');
+          } else if (error.code === 'auth/email-already-in-use') {
+              showToast('Este correo ya está registrado.');
+          } else {
+              showToast('Error: ' + error.message);
+          }
+      } finally {
+          isLoading = false;
+          submitBtn.disabled = false;
+          
+          const newSpinner = document.getElementById('btnIcon');
+          if (newSpinner && newSpinner.classList.contains('spinner')) {
+              newSpinner.outerHTML = isLogin ? 
+                `<svg id="btnIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>` :
+                `<svg id="btnIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>`;
+              btnText.textContent = isLogin ? 'Iniciar Sesión' : 'Registrarse';
+          }
+      }
+    });
+
+    // --- 6. AUTO-REDIRECCIÓN SI YA INICIÓ SESIÓN ---
+    auth.onAuthStateChanged(async (user) => {
+      // SOLO redirigimos si NO es una acción manual de los formularios
+      if (user && !accionManualActiva) {
+        document.body.innerHTML = '<div style="width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; font-family: sans-serif; color: white; background: #2ac0b4;"><h3>Redirigiendo a tu sesión...</h3></div>';
+        
+        try {
+          const userDoc = await db.collection("usuarios").doc(user.uid).get();
+          if (userDoc.exists && userDoc.data().rol === 'admin') {
+            window.location.replace('index-admin.html');
+          } else {
+            window.location.replace('index.html');
+          }
+        } catch (error) {
+          console.error("Error al auto-redirigir:", error);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
